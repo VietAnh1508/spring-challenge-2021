@@ -63,19 +63,41 @@ class Game {
   }
 
   getNextAction() {
-    let myTrees = this.trees.filter((tree) => tree.isMine);
-
     if (this.possibleActions.length === 1) {
       return this.possibleActions[0];
     }
 
-    const action = this.possibleActions.filter(
-      (action) =>
-        action.type === COMPLETE &&
-        action.targetCellIdx === myTrees[0].cellIndex
-    );
+    let action;
 
+    let largeTrees = this.getMyTreesBySize(3);
+    if (largeTrees.length === 0) {
+      // there is no large tree, looking for small trees to grow
+      let mediumTrees = this.getMyTreesBySize(2);
+      if (mediumTrees.length === 0 || this.mySun < 7) {
+        let smallTrees = this.getMyTreesBySize(1);
+        if (smallTrees.length === 0) {
+          // grow new tree?
+        } else {
+          action = this.getActionForCurrentTree(smallTrees[0], GROW);
+        }
+      } else {
+        action = this.getActionForCurrentTree(mediumTrees[0], GROW);
+      }
+    } else {
+      action = this.getMyTreesBySize(largeTrees[0], COMPLETE);
+    }
     return action;
+  }
+
+  getMyTreesBySize(size) {
+    return this.trees.filter((tree) => tree.isMine && tree.size === size);
+  }
+
+  getActionForCurrentTree(tree, actionType) {
+    this.possibleActions.filter(
+      (action) =>
+        action.type === actionType && action.targetCellIdx === tree.cellIndex
+    );
   }
 }
 
