@@ -1,4 +1,5 @@
 /* AI part */
+const TREE_BASE_COST = [0, 1, 3, 7];
 class Board {
     static IN_PROGRESS = -1;
 
@@ -23,6 +24,7 @@ class Board {
         this.opponentsSun = opponentsSun;
         this.opponentScore = opponentScore;
         this.opponentIsWaiting = opponentIsWaiting;
+        this.totalMoves = 0;
     }
 
     getMyPossibleActions() {
@@ -151,8 +153,10 @@ class Board {
     }
 
     // getters and setters
-    performMove(player, position) {
-        // this.totalMoves++;
+    performMove(player, action) {
+        this.totalMoves++;
+
+        // update game state
         // boardValues[position.getX()][position.getY()] = player;
     }
 
@@ -189,9 +193,25 @@ class State {
         this.visitCount++;
     }
 
-    getAllPossibleStates() {}
+    getAllPossibleStates() {
+        let possibleStates = [];
 
-    randomPlay() {}
+        // TODO
+        // get all possible actions
+        /*
+        for (let action of actions) {
+            // use action to update current game state
+            // new state = updated game state from current state
+            possibleStates.push(state);
+        }
+        */
+
+        return possibleStates;
+    }
+
+    randomPlay() {
+        // TODO
+    }
 }
 
 class Node {
@@ -199,6 +219,26 @@ class Node {
         this.state = state;
         this.parent = parent;
         this.children = children;
+    }
+
+    getRandomChildNode() {
+        const nbOfPossibeMoves = tthis.children.length;
+        const randomIndex = Math.random() * nbOfPossibeMoves;
+        return this.children[randomIndex];
+    }
+
+    getChildWithMaxScore() {
+        let node = null;
+        let maxScore = -Infinity;
+
+        for (let item of this.children) {
+            if (item.state.visitCount > maxScore) {
+                maxScore = item.state.visitCount;
+                node = item;
+            }
+        }
+
+        return node;
     }
 }
 
@@ -209,8 +249,8 @@ class GameTree {
 }
 
 // Upper Confidence Bound
-class UTC {
-    static utcValue(totalVisit, nodeWinScore, nodeVisit) {
+class UCT {
+    static uctValue(totalVisit, nodeWinScore, nodeVisit) {
         if (nodeVisit === 0) {
             return Infinity;
         }
@@ -221,41 +261,37 @@ class UTC {
         );
     }
 
-    static findBestNodeWithUTC(node) {
+    static findBestNodeWithUCT(node) {
         const parentVisit = node.state.visitCount;
 
         let nodeMax = null;
-        let maxUTCValue = -Infinity;
+        let maxUCTValue = -Infinity;
 
         for (let node of node.children) {
-            const utcValue = this.utcValue(
+            const uctValue = this.uctValue(
                 parentVisit,
                 node.state.winScore,
                 node.state.visitCount
             );
-            if (maxUTCValue < utcValue) {
+            if (maxUCTValue < uctValue) {
                 nodeMax = node;
-                maxUTCValue = utcValue;
+                maxUCTValue = uctValue;
             }
         }
 
         return nodeMax;
-
-        /*
-        int parentVisit = node.getState().getVisitCount();
-        return Collections.max(
-          node.getChildArray(),
-          Comparator.comparing(c -> uctValue(parentVisit, 
-            c.getState().getWinScore(), c.getState().getVisitCount())));
-        */
     }
 }
 
 const WIN_SCORE = 10;
-const TREE_BASE_COST = [0, 1, 3, 7];
 class MonteCarloTreeSearch {
     constructor(opponent) {
+        this.level = 3;
         this.opponent = opponent;
+    }
+
+    getMillisForCurrentLevel() {
+        return 2 * (this.level - 1) + 1;
     }
 
     findNextMove(board, player) {
@@ -265,20 +301,25 @@ class MonteCarloTreeSearch {
         rootNode.state.board = board;
         rootNode.state.player = this.opponent;
 
-        const endTime = 10;
-        while (new Date().getTime() < endTime) {
-            // TODO: change this
+        const startTime = new Date().getMilliseconds();
+        const endTime = startTime + 60 * this.getMillisForCurrentLevel();
+        while (new Date().getMilliseconds() < endTime) {
+            // Phase 1 - Selection
             let promisingNode = this.selectPromisingNode(rootNode);
+            
+            // Phase 2 - Expansion
             if (promisingNode.state.board.checkStatus() == Board.IN_PROGRESS) {
                 this.expandNode(promisingNode);
             }
 
+            // Phase 3 - Simulation
             let nodeToExplore = promisingNode;
             if (promisingNode.children.length > 0) {
                 nodeToExplore = promisingNode.getRandomChildNode();
             }
-
             let playoutResult = this.simulateRandomPlayout(nodeToExplore);
+
+            // Phase 4 - Update
             this.backPropogation(nodeToExplore, playoutResult);
         }
 
@@ -290,7 +331,7 @@ class MonteCarloTreeSearch {
     selectPromisingNode(rootNode) {
         let node = rootNode;
         while (node.children.length !== 0) {
-            node = UTC.findBestNodeWithUTC(node);
+            node = UCT.findBestNodeWithUCT(node);
         }
         return node;
     }
@@ -308,18 +349,18 @@ class MonteCarloTreeSearch {
 
     simulateRandomPlayout(node) {
         let tempNode = new Node(node);
-        let tempState = tempNode.getState();
-        let boardStatus = tempState.getBoard().checkStatus();
+        let tempState = tempNode.state;
+        let boardStatus = tempState.board.checkStatus();
 
         if (boardStatus === this.opponent) {
-            tempNode.getParent().getState().setWinScore(-Infinity);
+            tempNode.paarent.state.winScore = -Infinity;
             return boardStatus;
         }
 
         while (boardStatus === Board.IN_PROGRESS) {
             tempState.togglePlayer();
             tempState.randomPlay();
-            boardStatus = tempState.getBoard().checkStatus();
+            boardStatus = tempState.board.checkStatus();
         }
         return boardStatus;
     }
