@@ -48,6 +48,7 @@ class Action {
     }
 }
 
+const TREE_BASE_COST = [0, 1, 3, 7];
 class Game {
     constructor() {
         this.round = 0;
@@ -60,6 +61,197 @@ class Game {
         this.opponentsSun = 0;
         this.opponentScore = 0;
         this.opponentIsWaiting = 0;
+    }
+
+    getNextAction1() {
+        let largeTrees = this.getMyTreesBySize(3);
+        let mediumTrees = this.getMyTreesBySize(2);
+        let smallTrees = this.getMyTreesBySize(1);
+
+        // end game -> complete large trees
+        if (this.mySun >= 4 && this.day >= 20 && largeTrees.length > 0) {
+            const tree = this.findTreeOnHighestRichnessCell(largeTrees);
+            let action = this.getActionForCurrentTree(tree, COMPLETE);
+
+            if (action.length !== 0) {
+                return action;
+            }
+        }
+
+        if (mediumTrees.length === 0 && largeTrees.length === 0) {
+            if (smallTrees.length > 0) {
+                const smallTree = this.findTreeOnHighestRichnessCell(smallTrees);
+                let growCost = this.getGrowthCost(smallTree);
+                if (growCost <= this.mySun && !smallTree.isDormant) {
+                    return new Action(GROW, smallTree.cellIndex);
+                } else {
+                    return new Action(WAIT);
+                }
+            } else {
+                let seeds = this.getMyTreesBySize(0);
+                if (seeds.length > 0) {
+                    let seed = this.findTreeOnHighestRichnessCell(seeds);
+                    let growCost = this.getGrowthCost(seed);
+                    if (growCost <= this.mySun && !seed.isDormant) {
+                        return new Action(GROW, seed.cellIndex);
+                    }
+                }
+            }
+            
+            return new Action(WAIT);
+        }
+
+        let treesInCenter = this.findNotLargeTreesInCenter();
+        if (treesInCenter.length > 0) {
+            let growCost = this.getGrowthCost(treesInCenter[0]);
+            if (this.mySun < growCost) {
+                return new Action(WAIT);
+            } else {
+                return new Action(GROW, treesInCenter[0].cellIndex);
+            }
+        } else {
+            let seeds = this.getMyTreesBySize(0);
+            if (seeds.length > 0) {
+                let seed = this.findTreeOnHighestRichnessCell(seeds);
+                let growCost = this.getGrowthCost(seed);
+                if (growCost <= this.mySun && !seed.isDormant) {
+                    return new Action(GROW, seed.cellIndex);
+                } else {
+                    return new Action(WAIT);
+                }
+            } else {
+                if (smallTrees.length > 0) {
+                    let smallTree = this.findTreeOnHighestRichnessCell(smallTrees);
+                    let growCost = this.getGrowthCost(smallTree);
+                    if (growCost <= this.mySun && !smallTree.isDormant) {
+                        return new Action(GROW, smallTree.cellIndex);
+                    } else {
+                        return new Action(WAIT);
+                    }
+                }
+            }
+        }
+
+        // find next cell to seed from medium or large trees
+        // if not enough sun or there are no medium trees -> wait
+        let cellFromMedium = this.findNextCellToSeedFrom(mediumTrees);
+        if (cellFromMedium !== null) {
+            if (this.mySun < this.getSeedCost()) {
+                return new Action(WAIT);
+            }
+            return new Action(SEED, cellFromMedium.target, cellFromMedium.source);
+        }
+
+        let cellFromLarge = this.findNextCellToSeedFrom(largeTrees);
+        if (cellFromLarge !== null) {
+            if (this.mySun < this.getSeedCost()) {
+                return new Action(WAIT);
+            }
+            return new Action(SEED, cellFromLarge.target, cellFromLarge.source);
+        }
+
+        if (largeTrees.length > 3) {
+            let largeTree = this.findTreeOnHighestRichnessCell(largeTrees);
+            return new Action(COMPLETE, largeTree.cellIndex);
+        } else {
+            let selectedMediumTree = this.findTreeOnHighestRichnessCell(mediumTrees);
+            if (selectedMediumTree) {
+                if (this.mySun < this.getGrowthCost(selectedMediumTree)) {
+                    return new Action(WAIT);
+                } else {
+                    return new Action(GROW, selectedMediumTree.cellIndex);
+                }
+            }
+        }
+
+        // complete?
+        // -> no best cells to seed
+        let toCompleteTree = this.findTreeOnHighestRichnessCell(largeTrees);
+        return new Action(COMPLETE, toCompleteTree.cellIndex);
+    }
+
+    sortTreesByRichness(trees) {
+        trees.sort((a, b) => {
+            const richnessA = this.cells.find(cell => cell.index === a.cellIndex).richness;
+            const richnessB = this.cells.find(cell => cell.index === b.cellIndex).richness;
+            return richnessB - richnessA;
+        });
+    }
+
+    findNextCellToSeedFrom(trees) {
+        let cellsCanBeSeed = [];
+
+        for (let tree of trees) {
+            const seedCost = this.getSeedCost();
+            if (this.canSeedFrom(tree, seedCost)) {
+                let possibleCells = this.findPossibleCellsToSeedFrom(tree);
+                for (let cell of possibleCells) {
+                    if (this.canSeedTo(cell)) {
+                        cellsCanBeSeed.push({
+                            source: tree.cellIndex,
+                            target: cell
+                        });
+                    }
+                }
+            }
+        }
+
+        if (cellsCanBeSeed.length === 0) {
+            return null;
+        }
+
+        cellsCanBeSeed.sort((a, b) => {
+            let richnessA = this.cells.find(cell => cell.index === a.target).richness;
+            let richnessB = this.cells.find(cell => cell.index === b.target).richness;
+            return richnessB - richnessA;
+        });
+
+        return cellsCanBeSeed[0];
+    }
+
+    findPossibleCellsToSeedFrom(tree) {
+        let cellsCanBeSeed = [];
+
+        const cell = this.cells.find(cell => cell.index === tree.cellIndex);
+        if (cell.neighbors[0] !== -1) {
+            const neigh0 = cell.neighbors[0];
+            const cell0 = this.cells.find(cell => cell.index === neigh0);
+            if (cell0.neighbors[1] !== -1) {
+                cellsCanBeSeed.push(cell0.neighbors[1]);
+            }
+
+            if (cell0.neighbors[5] !== -1) {
+                cellsCanBeSeed.push(cell0.neighbors[5]);
+            }
+        }
+
+        if (cell.neighbors[2] !== -1) {
+            const neigh2 = cell.neighbors[2];
+
+            const cell2 = this.cells.find(cell => cell.index === neigh2);
+            if (cell2.neighbors[1] !== -1) {
+                cellsCanBeSeed.push(cell2.neighbors[1]);
+            }
+
+            if (cell2.neighbors[3] !== -1) {
+                cellsCanBeSeed.push(cell2.neighbors[3]);
+            }
+        }
+
+        if (cell.neighbors[4] !== -1) {
+            const neigh4 = cell.neighbors[4];
+
+            const cell4 = this.cells.find(cell => cell.index === neigh4);
+            if (cell4.neighbors[3] !== -1) {
+                cellsCanBeSeed.push(cell4.neighbors[3]);
+            }
+
+            if (cell4.neighbors[5] !== -1) {
+                cellsCanBeSeed.push(cell4.neighbors[5]);
+            }
+        }
+
+        return cellsCanBeSeed;
     }
 
     getNextAction() {
@@ -107,18 +299,18 @@ class Game {
                     action = this.getActionForCurrentTree(seed, GROW);
 
                     if (action.length === 0) {
-                        action = this.possibleActions[
-                            this.possibleActions.length - 1
-                        ];
+                        action =
+                            this.possibleActions[
+                                this.possibleActions.length - 1
+                            ];
                     }
                 }
             } else {
                 const tree = this.findTreeOnHighestRichnessCell(smallTrees);
                 action = this.getActionForCurrentTree(tree, GROW);
                 if (action.length === 0) {
-                    action = this.possibleActions[
-                        this.possibleActions.length - 1
-                    ];
+                    action =
+                        this.possibleActions[this.possibleActions.length - 1];
                 }
             }
         } else {
@@ -128,25 +320,151 @@ class Game {
                 action = this.possibleActions[this.possibleActions.length - 1];
             }
         }
-        // } else {
-        //     // TODO: refactor
-        //     if (this.mySun >= 4 && !largeTrees[0].isDormant && (largeTrees.length > 3 || this.day >= 20)) {
-        //         action = this.getActionForCurrentTree(largeTrees[0], COMPLETE);
-        //     } else {
-        //         action = this.getMostRichnessAction(GROW);
-        //         if (action.length === 0) {
-        //             action = this.getMostRichnessAction(SEED);
-        //         }
-        //     }
-        // }
 
         return action;
     }
 
-    getMyTreesBySize(size) {
-        return this.trees.filter(
-            (tree) => tree.isMine && tree.size === size && !tree.isDormant
+    getMyPossibleActions() {
+        let actions = [];
+
+        actions.push(new Action(WAIT));
+
+        const seedCost = this.getSeedCost();
+
+        let myTrees = this.getMyTreesBySize(-1);
+        myTrees.forEach((tree) => {
+            if (this.canSeedFrom(tree, seedCost)) {
+                for (let targetIndex of this.getCellIndexesInRange(
+                    tree.cellIndex,
+                    tree.size
+                )) {
+                    if (this.canSeedTo(targetIndex)) {
+                        actions.push(
+                            new Action(SEED, targetIndex, tree.cellIndex)
+                        );
+                    }
+                }
+            }
+
+            let growCost = this.getGrowthCost(tree);
+            if (growCost <= this.mySun && !tree.isDormant) {
+                if (tree.size === 3) {
+                    actions.push(new Action(COMPLETE, tree.cellIndex));
+                } else {
+                    actions.push(new Action(GROW, tree.cellIndex));
+                }
+            }
+        });
+
+        return actions;
+    }
+
+    getSeedCost() {
+        return this.getCostFor(0);
+    }
+
+    getGrowthCost(tree) {
+        const targetSize = tree.size + 1;
+        if (targetSize > 3) {
+            return 4; // complete cost
+        }
+        return this.getCostFor(targetSize);
+    }
+
+    canSeedFrom(tree, seedCost) {
+        return seedCost <= this.mySun && tree.size > 0 && !tree.isDormant;
+    }
+
+    canSeedTo(targetIndex) {
+        const cell = this.cells.find((cell) => cell.index === targetIndex);
+        let myTrees = this.getMyTreesBySize(-1);
+        for (let neighbor of cell.neighbors) {
+            if (myTrees.find(tree => tree.cellIndex === neighbor)) {
+                return false;
+            }
+        }
+
+        const treeAtThisCell = this.trees.find(
+            (tree) => tree.cellIndex === targetIndex
         );
+
+        return cell.richness !== 0 && !treeAtThisCell;
+    }
+
+    getCellIndexesInRange(center, range) {
+        const centerCell = this.cells.find((cell) => cell.index === center);
+        let cells = new Set();
+
+        switch (range) {
+            case 1:
+                let neighbors = centerCell.neighbors.filter((v) => v >= 0);
+                for (let item of neighbors) {
+                    cells.add(item);
+                }
+                break;
+            case 2:
+                let neighborsOfCenter = centerCell.neighbors.filter(
+                    (v) => v >= 0
+                );
+                for (let cellIndex of neighborsOfCenter) {
+                    const cell = this.cells.find(
+                        (cell) => cell.index === cellIndex
+                    );
+                    cells.add(cellIndex);
+                    let neighbors = cell.neighbors.filter((v) => v >= 0);
+                    for (let item of neighbors) {
+                        cells.add(item);
+                    }
+                }
+                break;
+            case 3:
+                let neighborsInRange1 = centerCell.neighbors.filter(
+                    (v) => v >= 0
+                );
+                for (let cellIndex of neighborsInRange1) {
+                    const cell = this.cells.find(
+                        (cell) => cell.index === cellIndex
+                    );
+                    cells.add(cellIndex);
+
+                    let neighborsInRange2 = cell.neighbors.filter(
+                        (v) => v >= 0
+                    );
+                    for (let item of neighborsInRange2) {
+                        cells.add(item);
+                        const cell = this.cells.find(
+                            (cell) => cell.index === item
+                        );
+                        let neighborInRange3 = cell.neighbors.filter(
+                            (v) => v >= 0
+                        );
+                        for (let n of neighborInRange3) {
+                            cells.add(n);
+                        }
+                    }
+                }
+                break;
+        }
+
+        return cells;
+    }
+
+    getCostFor(size) {
+        const baseCost = TREE_BASE_COST[size];
+        const sameTreeCount = this.trees.filter(
+            (tree) => tree.size === size && tree.isMine
+        ).length;
+        return baseCost + sameTreeCount;
+    }
+
+    getMyTreesBySize(size) {
+        if (size > -1) {
+            return this.trees.filter(
+                (tree) => tree.isMine && tree.size === size && !tree.isDormant
+            );
+        } else {
+            return this.trees.filter((tree) => tree.isMine);
+        }
     }
 
     getMostRichnessAction(actionType) {
@@ -163,14 +481,30 @@ class Game {
         }
 
         actions.sort((a, b) => {
-            let rA = this.cells.find((cell) => cell.index === a.targetCellIdx)
-                .richness;
-            let rB = this.cells.find((cell) => cell.index === b.targetCellIdx)
-                .richness;
+            let rA = this.cells.find(
+                (cell) => cell.index === a.targetCellIdx
+            ).richness;
+            let rB = this.cells.find(
+                (cell) => cell.index === b.targetCellIdx
+            ).richness;
             return rA - rB;
         });
 
         return actions[actions.length - 1];
+    }
+
+    findNotLargeTreesInCenter() {
+        let centerCells = this.cells
+            .filter(cell => cell.richness === 3)
+            .map(cell => cell.index);
+        let treesInCenter = this.trees.filter(tree => tree.isMine && !tree.isDormant
+            && centerCells.includes(tree.cellIndex) && tree.size < 3);
+
+        if (treesInCenter.length === 0) {
+            return [];
+        } else {
+            return treesInCenter.sort((a, b) => b.size - a.size);
+        }
     }
 
     findTreeOnHighestRichnessCell(trees) {
@@ -252,6 +586,6 @@ while (true) {
     }
 
     // GROW cellIdx | SEED sourceIdx targetIdx | COMPLETE cellIdx | WAIT <message>
-    const action = game.getNextAction();
+    const action = game.getNextAction1();
     console.log(action.toString());
 }
