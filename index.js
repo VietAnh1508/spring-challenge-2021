@@ -212,10 +212,9 @@ class Game {
     findPossibleCellsToSeedFrom(tree) {
         let cellsCanBeSeed = [];
 
-        const cell = this.cells.find(cell => cell.index === tree.cellIndex);
-        if (cell.neighbors[0] !== -1) {
-            const neigh0 = cell.neighbors[0];
-            const cell0 = this.cells.find(cell => cell.index === neigh0);
+        const curCell = this.cells.find(cell => cell.index === tree.cellIndex);
+        if (curCell.neighbors[0] !== -1) {
+            const cell0 = this.cells.find(cell => cell.index === curCell.neighbors[0]);
             if (cell0.neighbors[1] !== -1) {
                 cellsCanBeSeed.push(cell0.neighbors[1]);
             }
@@ -225,10 +224,8 @@ class Game {
             }
         }
 
-        if (cell.neighbors[2] !== -1) {
-            const neigh2 = cell.neighbors[2];
-
-            const cell2 = this.cells.find(cell => cell.index === neigh2);
+        if (curCell.neighbors[2] !== -1) {
+            const cell2 = this.cells.find(cell => cell.index === curCell.neighbors[2]);
             if (cell2.neighbors[1] !== -1) {
                 cellsCanBeSeed.push(cell2.neighbors[1]);
             }
@@ -238,16 +235,132 @@ class Game {
             }
         }
 
-        if (cell.neighbors[4] !== -1) {
-            const neigh4 = cell.neighbors[4];
-
-            const cell4 = this.cells.find(cell => cell.index === neigh4);
+        if (curCell.neighbors[4] !== -1) {
+            const cell4 = this.cells.find(cell => cell.index === curCell.neighbors[4]);
             if (cell4.neighbors[3] !== -1) {
                 cellsCanBeSeed.push(cell4.neighbors[3]);
             }
 
             if (cell4.neighbors[5] !== -1) {
                 cellsCanBeSeed.push(cell4.neighbors[5]);
+            }
+        }
+
+        if (tree.size === 3) {
+            // X-o
+            if (curCell.neighbors[0] !== -1) {
+                const cell0 = this.cells.find(cell => cell.index === curCell.neighbors[0]);
+                // X-o-o
+                if (cell0.neighbors[0] !== -1) {
+                    const neigh0Of0 = this.cells.find(cell => cell.index === cell0.neighbors[0]);
+                    //       o
+                    // X-o-o/
+                    if (neigh0Of0.neighbors[1] !== -1) {
+                        const neigh1Of0Of0 = this.cells.find(cell => cell.index === neigh0Of0.neighbors[1]);
+                        cellsCanBeSeed.push(neigh1Of0Of0.index);
+                        //     o
+                        //      \o
+                        // X-o-o/
+                        if (neigh1Of0Of0.neighbors[2] !== -1) {
+                            cellsCanBeSeed.push(neigh1Of0Of0.neighbors[2]);
+                        }
+                    }
+
+                    // X-o-o
+                    //     \o
+                    if (neigh0Of0.neighbors[5] !== -1) {
+                        const neigh5Of0Of0 = this.cells.find(cell => cell.index === neigh0Of0.neighbors[5]);
+                        cellsCanBeSeed.push(neigh5Of0Of0.index);
+                        // X-o-o
+                        //      \o
+                        //     o/
+                        if (neigh5Of0Of0.neighbors[4] !== -1) {
+                            cellsCanBeSeed.push(neigh5Of0Of0.neighbors[4]);
+                        }
+                    }
+                }
+            }
+
+            // o
+            //  \X
+            if (curCell.neighbors[2] !== -1) {
+                const cell2 = this.cells.find(cell => cell.index === curCell.neighbors[2]);
+                // o
+                //  \o
+                //   \X
+                if (cell2.neighbors[2] !== -1) {
+                    const neigh2Of2 = this.cells.find(cell => cell.index === cell2.neighbors[2]);
+                    //  /o
+                    // o
+                    //  \o
+                    //   \X
+                    if (neigh2Of2.neighbors[1] !== -1) {
+                        const neigh1Of2Of2 = this.cells.find(cell => cell.index === neigh2Of2.neighbors[1]);
+                        cellsCanBeSeed.push(neigh1Of2Of2.index);
+                        //  /o-o
+                        // o
+                        //  \o
+                        //   \X
+                        if (neigh1Of2Of2.neighbors[0] !== -1) {
+                            cellsCanBeSeed.push(neigh1Of2Of2.neighbors[0]);
+                        }
+                    }
+
+                    // o-o
+                    //    \o
+                    //     \X
+                    if (neigh2Of2.neighbors[3] !== -1) {
+                        const neigh3Of2Of2 = this.cells.find(cell => cell.index === neigh2Of2.neighbors[3]);
+                        cellsCanBeSeed.push(neigh3Of2Of2.index);
+                        //   o-o
+                        // o/   \o
+                        //       \X
+                        if (neigh3Of2Of2.neighbors[4] !== -1) {
+                            cellsCanBeSeed.push(neigh3Of2Of2.neighbors[4]);
+                        }
+                    }
+                }
+            }
+
+            //   X
+            // o/
+            if (curCell.neighbors[4] !== -1) {
+                const cell4 = this.cells.find(cell => cell.index === curCell.neighbors[4]);
+                //    X
+                //  o/
+                // o/
+                if (cell4.neighbors[4] !== -1) {
+                    const neigh4Of4 = this.cells.find(cell => cell.index === cell4.neighbors[4]);
+                    //    X
+                    //  o/
+                    // o/
+                    //  \o
+                    if (neigh4Of4.neighbors[5] !== -1) {
+                        const neigh5Of4Of4 = this.cells.find(cell => cell.index === neigh4Of4.neighbors[5]);
+                        cellsCanBeSeed.push(neigh5Of4Of4.index);
+                        //    X
+                        //  o/
+                        // o/
+                        //  \o-o
+                        if (neigh5Of4Of4.neighbors[0] !== -1) {
+                            cellsCanBeSeed.push(neigh5Of4Of4.neighbors[0]);
+                        }
+                    }
+
+                    //      X
+                    //    o/
+                    // o-o/
+                    if (neigh4Of4.neighbors[3] !== -1) {
+                        const neigh3Of4Of4 = this.cells.find(cell => cell.index === neigh4Of4.neighbors[3]);
+                        cellsCanBeSeed.push(neigh3Of4Of4.index);
+                        //        X
+                        // o\   o/
+                        //   o-o/
+                        if (neigh3Of4Of4.neighbors[2] !== -1) {
+                            cellsCanBeSeed.push(neigh3Of4Of4.neighbors[2]);
+                        }
+                    }
+                }
             }
         }
 
@@ -457,7 +570,7 @@ class Game {
         return baseCost + sameTreeCount;
     }
 
-    getMyTreesBySize(size) {
+    getMyTreesBySize(size, isDormant) {
         if (size > -1) {
             return this.trees.filter(
                 (tree) => tree.isMine && tree.size === size && !tree.isDormant
