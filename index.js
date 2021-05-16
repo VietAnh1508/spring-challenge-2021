@@ -63,7 +63,7 @@ class Game {
         this.opponentIsWaiting = 0;
     }
 
-    getNextAction1() {
+    getNextAction() {
         let largeTrees = this.getMyTreesBySize(3);
         let mediumTrees = this.getMyTreesBySize(2);
         let smallTrees = this.getMyTreesBySize(1);
@@ -71,16 +71,13 @@ class Game {
         // end game -> complete large trees
         if (this.mySun >= 4 && this.day >= 20 && largeTrees.length > 0) {
             const tree = this.findTreeOnHighestRichnessCell(largeTrees);
-            let action = this.getActionForCurrentTree(tree, COMPLETE);
-
-            if (action.length !== 0) {
-                return action;
-            }
+            return new Action(COMPLETE, tree.cellIndex);
         }
 
         if (mediumTrees.length === 0 && largeTrees.length === 0) {
             if (smallTrees.length > 0) {
-                const smallTree = this.findTreeOnHighestRichnessCell(smallTrees);
+                const smallTree =
+                    this.findTreeOnHighestRichnessCell(smallTrees);
                 let growCost = this.getGrowthCost(smallTree);
                 if (growCost <= this.mySun && !smallTree.isDormant) {
                     return new Action(GROW, smallTree.cellIndex);
@@ -97,7 +94,7 @@ class Game {
                     }
                 }
             }
-            
+
             return new Action(WAIT);
         }
 
@@ -121,7 +118,8 @@ class Game {
                 }
             } else {
                 if (smallTrees.length > 0) {
-                    let smallTree = this.findTreeOnHighestRichnessCell(smallTrees);
+                    let smallTree =
+                        this.findTreeOnHighestRichnessCell(smallTrees);
                     let growCost = this.getGrowthCost(smallTree);
                     if (growCost <= this.mySun && !smallTree.isDormant) {
                         return new Action(GROW, smallTree.cellIndex);
@@ -139,7 +137,11 @@ class Game {
             if (this.mySun < this.getSeedCost()) {
                 return new Action(WAIT);
             }
-            return new Action(SEED, cellFromMedium.target, cellFromMedium.source);
+            return new Action(
+                SEED,
+                cellFromMedium.target,
+                cellFromMedium.source
+            );
         }
 
         let cellFromLarge = this.findNextCellToSeedFrom(largeTrees);
@@ -154,7 +156,8 @@ class Game {
             let largeTree = this.findTreeOnHighestRichnessCell(largeTrees);
             return new Action(COMPLETE, largeTree.cellIndex);
         } else {
-            let selectedMediumTree = this.findTreeOnHighestRichnessCell(mediumTrees);
+            let selectedMediumTree =
+                this.findTreeOnHighestRichnessCell(mediumTrees);
             if (selectedMediumTree) {
                 if (this.mySun < this.getGrowthCost(selectedMediumTree)) {
                     return new Action(WAIT);
@@ -172,8 +175,12 @@ class Game {
 
     sortTreesByRichness(trees) {
         trees.sort((a, b) => {
-            const richnessA = this.cells.find(cell => cell.index === a.cellIndex).richness;
-            const richnessB = this.cells.find(cell => cell.index === b.cellIndex).richness;
+            const richnessA = this.cells.find(
+                (cell) => cell.index === a.cellIndex
+            ).richness;
+            const richnessB = this.cells.find(
+                (cell) => cell.index === b.cellIndex
+            ).richness;
             return richnessB - richnessA;
         });
     }
@@ -189,7 +196,7 @@ class Game {
                     if (this.canSeedTo(cell)) {
                         cellsCanBeSeed.push({
                             source: tree.cellIndex,
-                            target: cell
+                            target: cell,
                         });
                     }
                 }
@@ -201,8 +208,12 @@ class Game {
         }
 
         cellsCanBeSeed.sort((a, b) => {
-            let richnessA = this.cells.find(cell => cell.index === a.target).richness;
-            let richnessB = this.cells.find(cell => cell.index === b.target).richness;
+            let richnessA = this.cells.find(
+                (cell) => cell.index === a.target
+            ).richness;
+            let richnessB = this.cells.find(
+                (cell) => cell.index === b.target
+            ).richness;
             return richnessB - richnessA;
         });
 
@@ -212,9 +223,13 @@ class Game {
     findPossibleCellsToSeedFrom(tree) {
         let cellsCanBeSeed = [];
 
-        const curCell = this.cells.find(cell => cell.index === tree.cellIndex);
+        const curCell = this.cells.find(
+            (cell) => cell.index === tree.cellIndex
+        );
         if (curCell.neighbors[0] !== -1) {
-            const cell0 = this.cells.find(cell => cell.index === curCell.neighbors[0]);
+            const cell0 = this.cells.find(
+                (cell) => cell.index === curCell.neighbors[0]
+            );
             if (cell0.neighbors[1] !== -1) {
                 cellsCanBeSeed.push(cell0.neighbors[1]);
             }
@@ -225,7 +240,9 @@ class Game {
         }
 
         if (curCell.neighbors[2] !== -1) {
-            const cell2 = this.cells.find(cell => cell.index === curCell.neighbors[2]);
+            const cell2 = this.cells.find(
+                (cell) => cell.index === curCell.neighbors[2]
+            );
             if (cell2.neighbors[1] !== -1) {
                 cellsCanBeSeed.push(cell2.neighbors[1]);
             }
@@ -236,7 +253,9 @@ class Game {
         }
 
         if (curCell.neighbors[4] !== -1) {
-            const cell4 = this.cells.find(cell => cell.index === curCell.neighbors[4]);
+            const cell4 = this.cells.find(
+                (cell) => cell.index === curCell.neighbors[4]
+            );
             if (cell4.neighbors[3] !== -1) {
                 cellsCanBeSeed.push(cell4.neighbors[3]);
             }
@@ -249,14 +268,20 @@ class Game {
         if (tree.size === 3) {
             // X-o
             if (curCell.neighbors[0] !== -1) {
-                const cell0 = this.cells.find(cell => cell.index === curCell.neighbors[0]);
+                const cell0 = this.cells.find(
+                    (cell) => cell.index === curCell.neighbors[0]
+                );
                 // X-o-o
                 if (cell0.neighbors[0] !== -1) {
-                    const neigh0Of0 = this.cells.find(cell => cell.index === cell0.neighbors[0]);
+                    const neigh0Of0 = this.cells.find(
+                        (cell) => cell.index === cell0.neighbors[0]
+                    );
                     //       o
                     // X-o-o/
                     if (neigh0Of0.neighbors[1] !== -1) {
-                        const neigh1Of0Of0 = this.cells.find(cell => cell.index === neigh0Of0.neighbors[1]);
+                        const neigh1Of0Of0 = this.cells.find(
+                            (cell) => cell.index === neigh0Of0.neighbors[1]
+                        );
                         cellsCanBeSeed.push(neigh1Of0Of0.index);
                         //     o
                         //      \o
@@ -269,7 +294,9 @@ class Game {
                     // X-o-o
                     //     \o
                     if (neigh0Of0.neighbors[5] !== -1) {
-                        const neigh5Of0Of0 = this.cells.find(cell => cell.index === neigh0Of0.neighbors[5]);
+                        const neigh5Of0Of0 = this.cells.find(
+                            (cell) => cell.index === neigh0Of0.neighbors[5]
+                        );
                         cellsCanBeSeed.push(neigh5Of0Of0.index);
                         // X-o-o
                         //      \o
@@ -284,18 +311,24 @@ class Game {
             // o
             //  \X
             if (curCell.neighbors[2] !== -1) {
-                const cell2 = this.cells.find(cell => cell.index === curCell.neighbors[2]);
+                const cell2 = this.cells.find(
+                    (cell) => cell.index === curCell.neighbors[2]
+                );
                 // o
                 //  \o
                 //   \X
                 if (cell2.neighbors[2] !== -1) {
-                    const neigh2Of2 = this.cells.find(cell => cell.index === cell2.neighbors[2]);
+                    const neigh2Of2 = this.cells.find(
+                        (cell) => cell.index === cell2.neighbors[2]
+                    );
                     //  /o
                     // o
                     //  \o
                     //   \X
                     if (neigh2Of2.neighbors[1] !== -1) {
-                        const neigh1Of2Of2 = this.cells.find(cell => cell.index === neigh2Of2.neighbors[1]);
+                        const neigh1Of2Of2 = this.cells.find(
+                            (cell) => cell.index === neigh2Of2.neighbors[1]
+                        );
                         cellsCanBeSeed.push(neigh1Of2Of2.index);
                         //  /o-o
                         // o
@@ -310,7 +343,9 @@ class Game {
                     //    \o
                     //     \X
                     if (neigh2Of2.neighbors[3] !== -1) {
-                        const neigh3Of2Of2 = this.cells.find(cell => cell.index === neigh2Of2.neighbors[3]);
+                        const neigh3Of2Of2 = this.cells.find(
+                            (cell) => cell.index === neigh2Of2.neighbors[3]
+                        );
                         cellsCanBeSeed.push(neigh3Of2Of2.index);
                         //   o-o
                         // o/   \o
@@ -325,18 +360,24 @@ class Game {
             //   X
             // o/
             if (curCell.neighbors[4] !== -1) {
-                const cell4 = this.cells.find(cell => cell.index === curCell.neighbors[4]);
+                const cell4 = this.cells.find(
+                    (cell) => cell.index === curCell.neighbors[4]
+                );
                 //    X
                 //  o/
                 // o/
                 if (cell4.neighbors[4] !== -1) {
-                    const neigh4Of4 = this.cells.find(cell => cell.index === cell4.neighbors[4]);
+                    const neigh4Of4 = this.cells.find(
+                        (cell) => cell.index === cell4.neighbors[4]
+                    );
                     //    X
                     //  o/
                     // o/
                     //  \o
                     if (neigh4Of4.neighbors[5] !== -1) {
-                        const neigh5Of4Of4 = this.cells.find(cell => cell.index === neigh4Of4.neighbors[5]);
+                        const neigh5Of4Of4 = this.cells.find(
+                            (cell) => cell.index === neigh4Of4.neighbors[5]
+                        );
                         cellsCanBeSeed.push(neigh5Of4Of4.index);
                         //    X
                         //  o/
@@ -351,7 +392,9 @@ class Game {
                     //    o/
                     // o-o/
                     if (neigh4Of4.neighbors[3] !== -1) {
-                        const neigh3Of4Of4 = this.cells.find(cell => cell.index === neigh4Of4.neighbors[3]);
+                        const neigh3Of4Of4 = this.cells.find(
+                            (cell) => cell.index === neigh4Of4.neighbors[3]
+                        );
                         cellsCanBeSeed.push(neigh3Of4Of4.index);
                         //        X
                         // o\   o/
@@ -365,111 +408,6 @@ class Game {
         }
 
         return cellsCanBeSeed;
-    }
-
-    getNextAction() {
-        if (this.possibleActions.length === 1) {
-            // WAIT
-            return this.possibleActions[0];
-        }
-
-        let action;
-
-        let largeTrees = this.getMyTreesBySize(3);
-        if (
-            this.mySun >= 4 &&
-            (largeTrees.length > 3 || (this.day >= 20 && largeTrees.length > 0))
-        ) {
-            const tree = this.findTreeOnHighestRichnessCell(largeTrees);
-            action = this.getActionForCurrentTree(tree, COMPLETE);
-
-            if (action.length !== 0) {
-                return action;
-            }
-        }
-
-        // there is no large tree, looking for medium trees to grow
-        let mediumTrees = this.getMyTreesBySize(2);
-        if (mediumTrees.length === 0 || this.mySun < largeTrees.length + 7) {
-            // no medium trees or not enough suns, grow small trees to medium
-            let smallTrees = this.getMyTreesBySize(1);
-            if (
-                smallTrees.length === 0 ||
-                this.mySun < mediumTrees.length + 3
-            ) {
-                // no small trees or not enough suns, grow seeds to small tree
-                let seeds = this.getMyTreesBySize(0);
-                if (seeds.length === 0 || this.mySun < smallTrees.length + 1) {
-                    // no seed or not enough suns -> seed more
-                    // find tree or cell to seed, if not available -> WAIT
-                    // find a tree which stands next to a better soil cell
-                    action = this.getMostRichnessAction(SEED);
-                    // find tree that can seed to one of these cells
-                    // action = this.possibleActions[this.possibleActions.length - 1];
-                } else {
-                    // grow seed
-                    const seed = this.findTreeOnHighestRichnessCell(seeds);
-                    action = this.getActionForCurrentTree(seed, GROW);
-
-                    if (action.length === 0) {
-                        action =
-                            this.possibleActions[
-                                this.possibleActions.length - 1
-                            ];
-                    }
-                }
-            } else {
-                const tree = this.findTreeOnHighestRichnessCell(smallTrees);
-                action = this.getActionForCurrentTree(tree, GROW);
-                if (action.length === 0) {
-                    action =
-                        this.possibleActions[this.possibleActions.length - 1];
-                }
-            }
-        } else {
-            const tree = this.findTreeOnHighestRichnessCell(mediumTrees);
-            action = this.getActionForCurrentTree(tree, GROW);
-            if (action.length === 0) {
-                action = this.possibleActions[this.possibleActions.length - 1];
-            }
-        }
-
-        return action;
-    }
-
-    getMyPossibleActions() {
-        let actions = [];
-
-        actions.push(new Action(WAIT));
-
-        const seedCost = this.getSeedCost();
-
-        let myTrees = this.getMyTreesBySize(-1);
-        myTrees.forEach((tree) => {
-            if (this.canSeedFrom(tree, seedCost)) {
-                for (let targetIndex of this.getCellIndexesInRange(
-                    tree.cellIndex,
-                    tree.size
-                )) {
-                    if (this.canSeedTo(targetIndex)) {
-                        actions.push(
-                            new Action(SEED, targetIndex, tree.cellIndex)
-                        );
-                    }
-                }
-            }
-
-            let growCost = this.getGrowthCost(tree);
-            if (growCost <= this.mySun && !tree.isDormant) {
-                if (tree.size === 3) {
-                    actions.push(new Action(COMPLETE, tree.cellIndex));
-                } else {
-                    actions.push(new Action(GROW, tree.cellIndex));
-                }
-            }
-        });
-
-        return actions;
     }
 
     getSeedCost() {
@@ -492,7 +430,7 @@ class Game {
         const cell = this.cells.find((cell) => cell.index === targetIndex);
         let myTrees = this.getMyTreesBySize(-1);
         for (let neighbor of cell.neighbors) {
-            if (myTrees.find(tree => tree.cellIndex === neighbor)) {
+            if (myTrees.find((tree) => tree.cellIndex === neighbor)) {
                 return false;
             }
         }
@@ -504,64 +442,6 @@ class Game {
         return cell.richness !== 0 && !treeAtThisCell;
     }
 
-    getCellIndexesInRange(center, range) {
-        const centerCell = this.cells.find((cell) => cell.index === center);
-        let cells = new Set();
-
-        switch (range) {
-            case 1:
-                let neighbors = centerCell.neighbors.filter((v) => v >= 0);
-                for (let item of neighbors) {
-                    cells.add(item);
-                }
-                break;
-            case 2:
-                let neighborsOfCenter = centerCell.neighbors.filter(
-                    (v) => v >= 0
-                );
-                for (let cellIndex of neighborsOfCenter) {
-                    const cell = this.cells.find(
-                        (cell) => cell.index === cellIndex
-                    );
-                    cells.add(cellIndex);
-                    let neighbors = cell.neighbors.filter((v) => v >= 0);
-                    for (let item of neighbors) {
-                        cells.add(item);
-                    }
-                }
-                break;
-            case 3:
-                let neighborsInRange1 = centerCell.neighbors.filter(
-                    (v) => v >= 0
-                );
-                for (let cellIndex of neighborsInRange1) {
-                    const cell = this.cells.find(
-                        (cell) => cell.index === cellIndex
-                    );
-                    cells.add(cellIndex);
-
-                    let neighborsInRange2 = cell.neighbors.filter(
-                        (v) => v >= 0
-                    );
-                    for (let item of neighborsInRange2) {
-                        cells.add(item);
-                        const cell = this.cells.find(
-                            (cell) => cell.index === item
-                        );
-                        let neighborInRange3 = cell.neighbors.filter(
-                            (v) => v >= 0
-                        );
-                        for (let n of neighborInRange3) {
-                            cells.add(n);
-                        }
-                    }
-                }
-                break;
-        }
-
-        return cells;
-    }
-
     getCostFor(size) {
         const baseCost = TREE_BASE_COST[size];
         const sameTreeCount = this.trees.filter(
@@ -570,7 +450,7 @@ class Game {
         return baseCost + sameTreeCount;
     }
 
-    getMyTreesBySize(size, isDormant) {
+    getMyTreesBySize(size) {
         if (size > -1) {
             return this.trees.filter(
                 (tree) => tree.isMine && tree.size === size && !tree.isDormant
@@ -580,38 +460,17 @@ class Game {
         }
     }
 
-    getMostRichnessAction(actionType) {
-        let actions = this.possibleActions.filter(
-            (action) => action.type === actionType
-        );
-
-        if (actions.length === 0) {
-            return [];
-        }
-
-        if (actions.length === 1) {
-            return actions[0];
-        }
-
-        actions.sort((a, b) => {
-            let rA = this.cells.find(
-                (cell) => cell.index === a.targetCellIdx
-            ).richness;
-            let rB = this.cells.find(
-                (cell) => cell.index === b.targetCellIdx
-            ).richness;
-            return rA - rB;
-        });
-
-        return actions[actions.length - 1];
-    }
-
     findNotLargeTreesInCenter() {
         let centerCells = this.cells
-            .filter(cell => cell.richness === 3)
-            .map(cell => cell.index);
-        let treesInCenter = this.trees.filter(tree => tree.isMine && !tree.isDormant
-            && centerCells.includes(tree.cellIndex) && tree.size < 3);
+            .filter((cell) => cell.richness === 3)
+            .map((cell) => cell.index);
+        let treesInCenter = this.trees.filter(
+            (tree) =>
+                tree.isMine &&
+                !tree.isDormant &&
+                centerCells.includes(tree.cellIndex) &&
+                tree.size < 3
+        );
 
         if (treesInCenter.length === 0) {
             return [];
@@ -632,14 +491,6 @@ class Game {
         });
 
         return trees[trees.length - 1];
-    }
-
-    getActionForCurrentTree(tree, actionType) {
-        return this.possibleActions.filter(
-            (action) =>
-                action.type === actionType &&
-                action.targetCellIdx === tree.cellIndex
-        );
     }
 }
 
@@ -699,6 +550,6 @@ while (true) {
     }
 
     // GROW cellIdx | SEED sourceIdx targetIdx | COMPLETE cellIdx | WAIT <message>
-    const action = game.getNextAction1();
+    const action = game.getNextAction();
     console.log(action.toString());
 }
