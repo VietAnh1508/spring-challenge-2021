@@ -152,6 +152,7 @@ class Game {
     }
 
     getGrowTreeAction(smallTrees) {
+        // grow trees in center to quickly expand
         let treesInCenter = this.findNotLargeTreesInCenter();
         if (treesInCenter.length > 0) {
             let growCost = this.getGrowthCost(treesInCenter[0]);
@@ -318,38 +319,17 @@ class Game {
         let cellsCanBeSeed = [];
 
         const curCell = this.findCellByIndex(tree.cellIndex);
-        if (curCell.neighbors[0] !== -1) {
-            const cell0 = this.findCellByIndex(curCell.neighbors[0]);
-            if (cell0.neighbors[1] !== -1) {
-                cellsCanBeSeed.push(cell0.neighbors[1]);
-            }
+        cellsCanBeSeed.push(
+            ...this.findNeighborCellsToSeedFromMediumTree(curCell, 0, 1, 5)
+        );
 
-            if (cell0.neighbors[5] !== -1) {
-                cellsCanBeSeed.push(cell0.neighbors[5]);
-            }
-        }
+        cellsCanBeSeed.push(
+            ...this.findNeighborCellsToSeedFromMediumTree(curCell, 2, 3, 1)
+        );
 
-        if (curCell.neighbors[2] !== -1) {
-            const cell2 = this.findCellByIndex(curCell.neighbors[2]);
-            if (cell2.neighbors[1] !== -1) {
-                cellsCanBeSeed.push(cell2.neighbors[1]);
-            }
-
-            if (cell2.neighbors[3] !== -1) {
-                cellsCanBeSeed.push(cell2.neighbors[3]);
-            }
-        }
-
-        if (curCell.neighbors[4] !== -1) {
-            const cell4 = this.findCellByIndex(curCell.neighbors[4]);
-            if (cell4.neighbors[3] !== -1) {
-                cellsCanBeSeed.push(cell4.neighbors[3]);
-            }
-
-            if (cell4.neighbors[5] !== -1) {
-                cellsCanBeSeed.push(cell4.neighbors[5]);
-            }
-        }
+        cellsCanBeSeed.push(
+            ...this.findNeighborCellsToSeedFromMediumTree(curCell, 4, 3, 5)
+        );
 
         if (tree.size === 3) {
             // X-o
@@ -544,6 +524,30 @@ class Game {
         }
 
         return cellsCanBeSeed;
+    }
+
+    findNeighborCellsToSeedFromMediumTree(
+        centerCell,
+        neighbor,
+        leftOfNeighbor,
+        rightOfNeighbor
+    ) {
+        let cells = [];
+
+        if (centerCell.neighbors[neighbor] !== -1) {
+            const neighborCell = this.findCellByIndex(
+                centerCell.neighbors[neighbor]
+            );
+            if (neighborCell.neighbors[leftOfNeighbor] !== -1) {
+                cells.push(neighborCell.neighbors[leftOfNeighbor]);
+            }
+
+            if (neighborCell.neighbors[rightOfNeighbor] !== -1) {
+                cells.push(neighborCell.neighbors[rightOfNeighbor]);
+            }
+        }
+
+        return cells;
     }
 
     getSeedCost() {
