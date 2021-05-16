@@ -205,12 +205,8 @@ class Game {
             if (b.size > a.size) return 1;
             if (a.size < b.size) return -1;
 
-            const richnessA = this.cells.find(
-                (cell) => cell.index === a.cellIndex
-            ).richness;
-            const richnessB = this.cells.find(
-                (cell) => cell.index === b.cellIndex
-            ).richness;
+            const richnessA = this.findCellByIndex(a.cellIndex).richness;
+            const richnessB = this.findCellByIndex(b.cellIndex).richness;
             return richnessB - richnessA;
         });
 
@@ -234,17 +230,13 @@ class Game {
                 continue;
             }
 
-            const curCell = this.cells.find(
-                (cell) => cell.index === tree.cellIndex
-            );
+            const curCell = this.findCellByIndex(tree.cellIndex);
             const neigh1 = curCell.neighbors[sunDirection];
             // get neighbor with distance = 1
             if (neigh1 !== -1) {
                 cells.add(neigh1);
 
-                const cellNeigh1 = this.cells.find(
-                    (cell) => cell.index === neigh1
-                );
+                const cellNeigh1 = this.findCellByIndex(neigh1);
                 if (cellNeigh1.neighbors[sunDirection] !== -1) {
                     // get neighbor with distance = 2
                     if (tree.size >= 2) {
@@ -253,10 +245,8 @@ class Game {
 
                     // get neighbor with distance = 3
                     if (tree.size === 3) {
-                        const cellNeigh2 = this.cells.find(
-                            (cell) =>
-                                cell.index ===
-                                cellNeigh1.neighbors[sunDirection]
+                        const cellNeigh2 = this.findCellByIndex(
+                            cellNeigh1.neighbors[sunDirection]
                         );
                         if (cellNeigh2[sunDirection] !== -1) {
                             cells.add(cellNeigh2[sunDirection]);
@@ -316,12 +306,8 @@ class Game {
         }
 
         cellsCanBeSeed.sort((a, b) => {
-            let richnessA = this.cells.find(
-                (cell) => cell.index === a.target
-            ).richness;
-            let richnessB = this.cells.find(
-                (cell) => cell.index === b.target
-            ).richness;
+            let richnessA = this.findCellByIndex(a.target).richness;
+            let richnessB = this.findCellByIndex(b.target).richness;
             return richnessB - richnessA;
         });
 
@@ -331,13 +317,9 @@ class Game {
     findPossibleCellsToSeedFrom(tree) {
         let cellsCanBeSeed = [];
 
-        const curCell = this.cells.find(
-            (cell) => cell.index === tree.cellIndex
-        );
+        const curCell = this.findCellByIndex(tree.cellIndex);
         if (curCell.neighbors[0] !== -1) {
-            const cell0 = this.cells.find(
-                (cell) => cell.index === curCell.neighbors[0]
-            );
+            const cell0 = this.findCellByIndex(curCell.neighbors[0]);
             if (cell0.neighbors[1] !== -1) {
                 cellsCanBeSeed.push(cell0.neighbors[1]);
             }
@@ -348,9 +330,7 @@ class Game {
         }
 
         if (curCell.neighbors[2] !== -1) {
-            const cell2 = this.cells.find(
-                (cell) => cell.index === curCell.neighbors[2]
-            );
+            const cell2 = this.findCellByIndex(curCell.neighbors[2]);
             if (cell2.neighbors[1] !== -1) {
                 cellsCanBeSeed.push(cell2.neighbors[1]);
             }
@@ -361,9 +341,7 @@ class Game {
         }
 
         if (curCell.neighbors[4] !== -1) {
-            const cell4 = this.cells.find(
-                (cell) => cell.index === curCell.neighbors[4]
-            );
+            const cell4 = this.findCellByIndex(curCell.neighbors[4]);
             if (cell4.neighbors[3] !== -1) {
                 cellsCanBeSeed.push(cell4.neighbors[3]);
             }
@@ -376,19 +354,21 @@ class Game {
         if (tree.size === 3) {
             // X-o
             if (curCell.neighbors[0] !== -1) {
-                const cell0 = this.cells.find(
-                    (cell) => cell.index === curCell.neighbors[0]
-                );
+                const cell0 = this.findCellByIndex(curCell.neighbors[0]);
                 // X-o-o
                 if (cell0.neighbors[0] !== -1) {
-                    const neigh0Of0 = this.cells.find(
-                        (cell) => cell.index === cell0.neighbors[0]
-                    );
+                    const neigh0Of0 = this.findCellByIndex(cell0.neighbors[0]);
+
+                    // X-o-o-o
+                    if (neigh0Of0.neighbors[0] !== -1) {
+                        cellsCanBeSeed.push(neigh0Of0.neighbors[0]);
+                    }
+
                     //       o
                     // X-o-o/
                     if (neigh0Of0.neighbors[1] !== -1) {
-                        const neigh1Of0Of0 = this.cells.find(
-                            (cell) => cell.index === neigh0Of0.neighbors[1]
+                        const neigh1Of0Of0 = this.findCellByIndex(
+                            neigh0Of0.neighbors[1]
                         );
                         cellsCanBeSeed.push(neigh1Of0Of0.index);
                         //     o
@@ -402,8 +382,8 @@ class Game {
                     // X-o-o
                     //     \o
                     if (neigh0Of0.neighbors[5] !== -1) {
-                        const neigh5Of0Of0 = this.cells.find(
-                            (cell) => cell.index === neigh0Of0.neighbors[5]
+                        const neigh5Of0Of0 = this.findCellByIndex(
+                            neigh0Of0.neighbors[5]
                         );
                         cellsCanBeSeed.push(neigh5Of0Of0.index);
                         // X-o-o
@@ -416,26 +396,46 @@ class Game {
                 }
             }
 
+            //   o
+            // X/
+            if (curCell.neighbors[1] !== -1) {
+                const cell1 = this.findCellByIndex(curCell.neighbors[1]);
+                //    o
+                //  o/
+                // X/
+                if (cell1.neighbors[1] !== -1) {
+                    const negh1Of1 = this.findCellByIndex(cell1.neighbors[1]);
+                    if (negh1Of1.neighbors[1] !== -1) {
+                        cellsCanBeSeed.push(negh1Of1.neighbors[1]);
+                    }
+                }
+            }
+
             // o
             //  \X
             if (curCell.neighbors[2] !== -1) {
-                const cell2 = this.cells.find(
-                    (cell) => cell.index === curCell.neighbors[2]
-                );
+                const cell2 = this.findCellByIndex(curCell.neighbors[2]);
                 // o
                 //  \o
                 //   \X
                 if (cell2.neighbors[2] !== -1) {
-                    const neigh2Of2 = this.cells.find(
-                        (cell) => cell.index === cell2.neighbors[2]
-                    );
+                    const neigh2Of2 = this.findCellByIndex(cell2.neighbors[2]);
+
+                    // o
+                    //  \o
+                    //   \o
+                    //    \X
+                    if (neigh2Of2.neighbors[2] !== -1) {
+                        cellsCanBeSeed.push(neigh2Of2.neighbors[2]);
+                    }
+
                     //  /o
                     // o
                     //  \o
                     //   \X
                     if (neigh2Of2.neighbors[1] !== -1) {
-                        const neigh1Of2Of2 = this.cells.find(
-                            (cell) => cell.index === neigh2Of2.neighbors[1]
+                        const neigh1Of2Of2 = this.findCellByIndex(
+                            neigh2Of2.neighbors[1]
                         );
                         cellsCanBeSeed.push(neigh1Of2Of2.index);
                         //  /o-o
@@ -451,8 +451,8 @@ class Game {
                     //    \o
                     //     \X
                     if (neigh2Of2.neighbors[3] !== -1) {
-                        const neigh3Of2Of2 = this.cells.find(
-                            (cell) => cell.index === neigh2Of2.neighbors[3]
+                        const neigh3Of2Of2 = this.findCellByIndex(
+                            neigh2Of2.neighbors[3]
                         );
                         cellsCanBeSeed.push(neigh3Of2Of2.index);
                         //   o-o
@@ -465,26 +465,44 @@ class Game {
                 }
             }
 
+            // o-X
+            if (curCell.neighbors[3] !== -1) {
+                const cell3 = this.findCellByIndex(curCell.neighbors[3]);
+                // o-o-X
+                if (cell3.neighbors[3] !== -1) {
+                    const cell3Of3 = this.findCellByIndex(cell3.neighbors[3]);
+                    // o-o-o-X
+                    if (cell3Of3.neighbors[3] !== -1) {
+                        cellsCanBeSeed.push(cell3Of3.neighbors[3]);
+                    }
+                }
+            }
+
             //   X
             // o/
             if (curCell.neighbors[4] !== -1) {
-                const cell4 = this.cells.find(
-                    (cell) => cell.index === curCell.neighbors[4]
-                );
+                const cell4 = this.findCellByIndex(curCell.neighbors[4]);
                 //    X
                 //  o/
                 // o/
                 if (cell4.neighbors[4] !== -1) {
-                    const neigh4Of4 = this.cells.find(
-                        (cell) => cell.index === cell4.neighbors[4]
-                    );
+                    const neigh4Of4 = this.findCellByIndex(cell4.neighbors[4]);
+
+                    //     X
+                    //   o/
+                    //  o/
+                    // o
+                    if (neigh4Of4.neighbors[4] !== -1) {
+                        cellsCanBeSeed.push(neigh4Of4.neighbors[4]);
+                    }
+
                     //    X
                     //  o/
                     // o/
                     //  \o
                     if (neigh4Of4.neighbors[5] !== -1) {
-                        const neigh5Of4Of4 = this.cells.find(
-                            (cell) => cell.index === neigh4Of4.neighbors[5]
+                        const neigh5Of4Of4 = this.findCellByIndex(
+                            neigh4Of4.neighbors[5]
                         );
                         cellsCanBeSeed.push(neigh5Of4Of4.index);
                         //    X
@@ -500,8 +518,8 @@ class Game {
                     //    o/
                     // o-o/
                     if (neigh4Of4.neighbors[3] !== -1) {
-                        const neigh3Of4Of4 = this.cells.find(
-                            (cell) => cell.index === neigh4Of4.neighbors[3]
+                        const neigh3Of4Of4 = this.findCellByIndex(
+                            neigh4Of4.neighbors[3]
                         );
                         cellsCanBeSeed.push(neigh3Of4Of4.index);
                         //        X
@@ -510,6 +528,16 @@ class Game {
                         if (neigh3Of4Of4.neighbors[2] !== -1) {
                             cellsCanBeSeed.push(neigh3Of4Of4.neighbors[2]);
                         }
+                    }
+                }
+            }
+
+            if (curCell.neighbors[5] !== -1) {
+                const cell5 = this.findCellByIndex(curCell.neighbors[5]);
+                if (cell5.neighbors[5] !== -1) {
+                    const cell5Of5 = this.findCellByIndex(cell5.neighbors[5]);
+                    if (cell5Of5.neighbors[5] !== -1) {
+                        cellsCanBeSeed.push(cell5Of5.neighbors[5]);
                     }
                 }
             }
@@ -535,7 +563,7 @@ class Game {
     }
 
     canSeedTo(targetIndex) {
-        const cell = this.cells.find((cell) => cell.index === targetIndex);
+        const cell = this.findCellByIndex(targetIndex);
         let myTrees = this.getMyTreesBySize(-1);
         for (let neighbor of cell.neighbors) {
             if (myTrees.find((tree) => tree.cellIndex === neighbor)) {
@@ -589,16 +617,16 @@ class Game {
 
     findTreeOnHighestRichnessCell(trees) {
         trees.sort((a, b) => {
-            let richnessA = this.cells.find(
-                (cell) => cell.index === a.cellIndex
-            ).richness;
-            let richnessB = this.cells.find(
-                (cell) => cell.index === b.cellIndex
-            ).richness;
+            let richnessA = this.findCellByIndex(a.cellIndex).richness;
+            let richnessB = this.findCellByIndex(b.cellIndex).richness;
             return richnessA - richnessB;
         });
 
         return trees[trees.length - 1];
+    }
+
+    findCellByIndex(index) {
+        return this.cells.find((cell) => cell.index === index);
     }
 }
 
