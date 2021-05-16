@@ -67,28 +67,36 @@ class Game {
         let largeTrees = this.getMyTreesBySize(3);
         let mediumTrees = this.getMyTreesBySize(2);
         let smallTrees = this.getMyTreesBySize(1);
+        let seeds = this.getMyTreesBySize(0);
 
-        const endGameAction = this.getActionForEndGame(largeTrees);
-        if (endGameAction) {
-            return endGameAction;
+        if (this.day >= 20) {
+            const endGameAction = this.getActionForEndGame(largeTrees);
+            if (endGameAction) {
+                return endGameAction;
+            }
         }
 
         if (mediumTrees.length === 0 && largeTrees.length === 0) {
             if (smallTrees.length > 0) {
+                const growTreeAction =
+                    this.getGrowTreeActionForTreesNotCoveredByShadow();
+                if (growTreeAction && growTreeAction.type !== WAIT) {
+                    return growTreeAction;
+                }
+
                 const smallTree =
                     this.findTreeOnHighestRichnessCell(smallTrees);
                 let growCost = this.getGrowthCost(smallTree);
-                if (growCost <= this.mySun && !smallTree.isDormant) {
+                if (growCost <= this.mySun) {
                     return new Action(GROW, smallTree.cellIndex);
                 } else {
                     return new Action(WAIT);
                 }
             } else {
-                let seeds = this.getMyTreesBySize(0);
                 if (seeds.length > 0) {
                     let seed = this.findTreeOnHighestRichnessCell(seeds);
                     let growCost = this.getGrowthCost(seed);
-                    if (growCost <= this.mySun && !seed.isDormant) {
+                    if (growCost <= this.mySun) {
                         return new Action(GROW, seed.cellIndex);
                     }
                 }
@@ -97,7 +105,11 @@ class Game {
             return new Action(WAIT);
         }
 
-        const growTreeAction = this.getGrowTreeAction(smallTrees);
+        const growTreeAction = this.getGrowTreeAction(
+            seeds,
+            smallTrees,
+            mediumTrees
+        );
         if (growTreeAction) {
             return growTreeAction;
         }
@@ -108,9 +120,20 @@ class Game {
             (tree) => tree.isMine && tree.size === 0
         );
         if (allSeeds.length === 0) {
-            const seedAction = this.getSeedAction(largeTrees, mediumTrees);
-            if (seedAction) {
-                return seedAction;
+            if (this.day >= 20 && largeTrees.length === 0) {
+                let selectedMediumTree =
+                    this.findTreeOnHighestRichnessCell(mediumTrees);
+                if (selectedMediumTree) {
+                    if (this.mySun < this.getGrowthCost(selectedMediumTree)) {
+                        return new Action(WAIT);
+                    }
+                    return new Action(GROW, selectedMediumTree.cellIndex);
+                }
+            } else {
+                const seedAction = this.getSeedAction(largeTrees, mediumTrees);
+                if (seedAction) {
+                    return seedAction;
+                }
             }
         }
 
@@ -126,13 +149,26 @@ class Game {
                 return action;
             }
 
-            let selectedMediumTree =
-                this.findTreeOnHighestRichnessCell(mediumTrees);
-            if (selectedMediumTree) {
+            if (mediumTrees.length > 0) {
+                let selectedMediumTree =
+                    this.findTreeOnHighestRichnessCell(mediumTrees);
                 if (this.mySun < this.getGrowthCost(selectedMediumTree)) {
                     return new Action(WAIT);
                 }
                 return new Action(GROW, selectedMediumTree.cellIndex);
+            } else if (smallTrees.length > 0) {
+                let selectedSmallTree =
+                    this.findTreeOnHighestRichnessCell(smallTrees);
+                if (this.mySun < this.getGrowthCost(selectedSmallTree)) {
+                    return new Action(WAIT);
+                }
+                return new Action(GROW, selectedSmallTree.cellIndex);
+            } else if (seeds.length > 0) {
+                const selectedSeed = this.findTreeOnHighestRichnessCell(seeds);
+                if (this.mySun < this.getGrowthCost(selectedSeed)) {
+                    return new Action(WAIT);
+                }
+                return new Action(GROW, selectedSeed.cellIndex);
             }
         }
 
@@ -143,7 +179,7 @@ class Game {
     }
 
     getActionForEndGame(largeTrees) {
-        if (this.mySun >= 4 && this.day >= 20 && largeTrees.length > 0) {
+        if (this.mySun >= 4 && largeTrees.length > 0) {
             const tree = this.findTreeOnHighestRichnessCell(largeTrees);
             return new Action(COMPLETE, tree.cellIndex);
         }
@@ -151,9 +187,9 @@ class Game {
         return null;
     }
 
-    getGrowTreeAction(smallTrees) {
+    getGrowTreeAction(seeds, smallTrees, mediumTrees) {
         // grow trees in center to quickly expand
-        let treesInCenter = this.findNotLargeTreesInCenter();
+        let treesInCenter = this.findNotLargeTreesByRichness(3);
         if (treesInCenter.length > 0) {
             let growCost = this.getGrowthCost(treesInCenter[0]);
             if (this.mySun < growCost) {
@@ -162,27 +198,24 @@ class Game {
                 return new Action(GROW, treesInCenter[0].cellIndex);
             }
         } else {
-            let seeds = this.getMyTreesBySize(0);
             if (seeds.length > 0) {
                 let seed = this.findTreeOnHighestRichnessCell(seeds);
                 let growCost = this.getGrowthCost(seed);
-                if (growCost <= this.mySun && !seed.isDormant) {
+                if (growCost <= this.mySun) {
                     return new Action(GROW, seed.cellIndex);
                 } else {
                     return new Action(WAIT);
                 }
-            } else {
-                if (smallTrees.length > 0) {
-                    let smallTree =
-                        this.findTreeOnHighestRichnessCell(smallTrees);
-                    let growCost = this.getGrowthCost(smallTree);
-                    if (growCost <= this.mySun && !smallTree.isDormant) {
-                        return new Action(GROW, smallTree.cellIndex);
-                    } else {
-                        return new Action(WAIT);
-                    }
+            } else if (smallTrees.length > 0) {
+                let smallTree = this.findTreeOnHighestRichnessCell(smallTrees);
+                let growCost = this.getGrowthCost(smallTree);
+                if (growCost <= this.mySun) {
+                    return new Action(GROW, smallTree.cellIndex);
+                } else {
+                    return new Action(WAIT);
                 }
             }
+            // do not grow medium trees to large at this state because we want to keep trees to expand
         }
         return null;
     }
@@ -600,22 +633,23 @@ class Game {
         }
     }
 
-    findNotLargeTreesInCenter() {
-        let centerCells = this.cells
-            .filter((cell) => cell.richness === 3)
+    findNotLargeTreesByRichness(richness) {
+        let selectedCells = this.cells
+            .filter((cell) => cell.richness === richness)
             .map((cell) => cell.index);
-        let treesInCenter = this.trees.filter(
+
+        let selectedTrees = this.trees.filter(
             (tree) =>
                 tree.isMine &&
                 !tree.isDormant &&
-                centerCells.includes(tree.cellIndex) &&
+                selectedCells.includes(tree.cellIndex) &&
                 tree.size < 3
         );
 
-        if (treesInCenter.length === 0) {
+        if (selectedTrees.length === 0) {
             return [];
         } else {
-            return treesInCenter.sort((a, b) => b.size - a.size);
+            return selectedTrees.sort((a, b) => b.size - a.size);
         }
     }
 
