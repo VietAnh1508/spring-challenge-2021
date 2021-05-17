@@ -372,11 +372,6 @@ class Game {
                 if (cell0.neighbors[0] !== -1) {
                     const neigh0Of0 = this.findCellByIndex(cell0.neighbors[0]);
 
-                    // X-o-o-o
-                    if (neigh0Of0.neighbors[0] !== -1) {
-                        cellsCanBeSeed.push(neigh0Of0.neighbors[0]);
-                    }
-
                     //       o
                     // X-o-o/
                     if (neigh0Of0.neighbors[1] !== -1) {
@@ -406,20 +401,10 @@ class Game {
                             cellsCanBeSeed.push(neigh5Of0Of0.neighbors[4]);
                         }
                     }
-                }
-            }
 
-            //   o
-            // X/
-            if (curCell.neighbors[1] !== -1) {
-                const cell1 = this.findCellByIndex(curCell.neighbors[1]);
-                //    o
-                //  o/
-                // X/
-                if (cell1.neighbors[1] !== -1) {
-                    const negh1Of1 = this.findCellByIndex(cell1.neighbors[1]);
-                    if (negh1Of1.neighbors[1] !== -1) {
-                        cellsCanBeSeed.push(negh1Of1.neighbors[1]);
+                    // X-o-o-o
+                    if (neigh0Of0.neighbors[0] !== -1) {
+                        cellsCanBeSeed.push(neigh0Of0.neighbors[0]);
                     }
                 }
             }
@@ -433,14 +418,6 @@ class Game {
                 //   \X
                 if (cell2.neighbors[2] !== -1) {
                     const neigh2Of2 = this.findCellByIndex(cell2.neighbors[2]);
-
-                    // o
-                    //  \o
-                    //   \o
-                    //    \X
-                    if (neigh2Of2.neighbors[2] !== -1) {
-                        cellsCanBeSeed.push(neigh2Of2.neighbors[2]);
-                    }
 
                     //  /o
                     // o
@@ -475,18 +452,13 @@ class Game {
                             cellsCanBeSeed.push(neigh3Of2Of2.neighbors[4]);
                         }
                     }
-                }
-            }
 
-            // o-X
-            if (curCell.neighbors[3] !== -1) {
-                const cell3 = this.findCellByIndex(curCell.neighbors[3]);
-                // o-o-X
-                if (cell3.neighbors[3] !== -1) {
-                    const cell3Of3 = this.findCellByIndex(cell3.neighbors[3]);
-                    // o-o-o-X
-                    if (cell3Of3.neighbors[3] !== -1) {
-                        cellsCanBeSeed.push(cell3Of3.neighbors[3]);
+                    // o
+                    //  \o
+                    //   \o
+                    //    \X
+                    if (neigh2Of2.neighbors[2] !== -1) {
+                        cellsCanBeSeed.push(neigh2Of2.neighbors[2]);
                     }
                 }
             }
@@ -500,14 +472,6 @@ class Game {
                 // o/
                 if (cell4.neighbors[4] !== -1) {
                     const neigh4Of4 = this.findCellByIndex(cell4.neighbors[4]);
-
-                    //     X
-                    //   o/
-                    //  o/
-                    // o
-                    if (neigh4Of4.neighbors[4] !== -1) {
-                        cellsCanBeSeed.push(neigh4Of4.neighbors[4]);
-                    }
 
                     //    X
                     //  o/
@@ -541,6 +505,42 @@ class Game {
                         if (neigh3Of4Of4.neighbors[2] !== -1) {
                             cellsCanBeSeed.push(neigh3Of4Of4.neighbors[2]);
                         }
+                    }
+
+                    //     X
+                    //   o/
+                    //  o/
+                    // o
+                    if (neigh4Of4.neighbors[4] !== -1) {
+                        cellsCanBeSeed.push(neigh4Of4.neighbors[4]);
+                    }
+                }
+            }
+
+            //   o
+            // X/
+            if (curCell.neighbors[1] !== -1) {
+                const cell1 = this.findCellByIndex(curCell.neighbors[1]);
+                //    o
+                //  o/
+                // X/
+                if (cell1.neighbors[1] !== -1) {
+                    const negh1Of1 = this.findCellByIndex(cell1.neighbors[1]);
+                    if (negh1Of1.neighbors[1] !== -1) {
+                        cellsCanBeSeed.push(negh1Of1.neighbors[1]);
+                    }
+                }
+            }
+
+            // o-X
+            if (curCell.neighbors[3] !== -1) {
+                const cell3 = this.findCellByIndex(curCell.neighbors[3]);
+                // o-o-X
+                if (cell3.neighbors[3] !== -1) {
+                    const cell3Of3 = this.findCellByIndex(cell3.neighbors[3]);
+                    // o-o-o-X
+                    if (cell3Of3.neighbors[3] !== -1) {
+                        cellsCanBeSeed.push(cell3Of3.neighbors[3]);
                     }
                 }
             }
