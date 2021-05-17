@@ -69,7 +69,7 @@ class Game {
         let smallTrees = this.getMyTreesBySize(1);
         let seeds = this.getMyTreesBySize(0);
 
-        if (this.day >= 20) {
+        if (this.day >= 19) {
             const endGameAction = this.getActionForEndGame(largeTrees);
             if (endGameAction) {
                 return endGameAction;
@@ -86,17 +86,13 @@ class Game {
 
                 const smallTree =
                     this.findTreeOnHighestRichnessCell(smallTrees);
-                let growCost = this.getGrowthCost(smallTree);
-                if (growCost <= this.mySun) {
+                if (this.getGrowthCost(smallTree) <= this.mySun) {
                     return new Action(GROW, smallTree.cellIndex);
-                } else {
-                    return new Action(WAIT);
                 }
             } else {
                 if (seeds.length > 0) {
                     let seed = this.findTreeOnHighestRichnessCell(seeds);
-                    let growCost = this.getGrowthCost(seed);
-                    if (growCost <= this.mySun) {
+                    if (this.getGrowthCost(seed) <= this.mySun) {
                         return new Action(GROW, seed.cellIndex);
                     }
                 }
@@ -120,7 +116,7 @@ class Game {
             (tree) => tree.isMine && tree.size === 0
         );
         if (allSeeds.length === 0) {
-            if (this.day >= 20 && largeTrees.length === 0) {
+            if (this.day >= 19 && largeTrees.length === 0) {
                 let selectedMediumTree =
                     this.findTreeOnHighestRichnessCell(mediumTrees);
                 if (selectedMediumTree) {
