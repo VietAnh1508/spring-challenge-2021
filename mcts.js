@@ -152,12 +152,50 @@ class Board {
         return baseCost + sameTreeCount;
     }
 
-    // getters and setters
-    performMove(player, action) {
+    doAction(action) {
         this.totalMoves++;
 
-        // update game state
-        // boardValues[position.getX()][position.getY()] = player;
+        switch (action.type) {
+            case WAIT:
+                // get all trees that are not covered by shadow
+                // increase my suns
+                break;
+            case SEED:
+                let seed = new Tree(action.targetCellIdx, 0, true, true);
+                this.trees.push(seed);
+
+                this.mySun -= this.getSeedCost();
+                let tree = this.getTreeAtIndex(action.sourceCellIdx);
+                tree.isDormant = true;
+                break;
+            case GROW:
+                let tree = this.getTreeAtIndex(action.targetCellIdx);
+                tree.isDormant = true;
+
+                this.mySun -= this.getGrowthCost(tree);
+                break;
+            case COMPLETE:
+                let tree = this.getTreeAtIndex(action.targetCellIdx);
+                this.mySun -= this.getGrowthCost(tree);
+
+                let targetCell = this.cells.find(cell => cell.index === action.targetCellIdx);
+                // TODO: refactor: calculate score for opponent
+                this.myScore += targetCell.richness + this.nutrients;
+                this.nutrients--;
+                break;
+        }
+    }
+
+    getMyTreesBySize(size) {
+        if (size) {
+            return this.trees.filter(
+                (tree) => tree.isMine && tree.size === size && !tree.isDormant
+            );
+        }
+    }
+
+    getTreeAtIndex(index) {
+        return this.trees.find(tree => tree.cellIndex === index);
     }
 
     /* Evaluate whether the game is won and return winner.
@@ -167,18 +205,6 @@ class Board {
         if (this.myScore === this.opponentScore) return 0;
         return -1;
     }
-
-    // getEmptyPositions() {
-    //     const size = this.boardValues.length;
-    //     let emptyPositions = [];
-    //     for (let i = 0; i < size; i++) {
-    //         for (let j = 0; j < size; j++) {
-    //             if (boardValues[i][j] == 0)
-    //                 emptyPositions.add(new Position(i, j));
-    //         }
-    //     }
-    //     return emptyPositions;
-    // }
 }
 
 class State {
@@ -196,21 +222,25 @@ class State {
     getAllPossibleStates() {
         let possibleStates = [];
 
-        // TODO
-        // get all possible actions
-        /*
-        for (let action of actions) {
-            // use action to update current game state
-            // new state = updated game state from current state
-            possibleStates.push(state);
+        let possibleActions = this.board.getMyPossibleActions();
+        for (let action of possibleActions) {
+            let currentBoard = this.board;
+            // let updatedBoard = this.updateBoardWithAction(currentBoard, action);
+
+            let newState = new State(currentBoard);
+            newState.player = 3 - this.player;
+            newState.board.doAction(action);
+
+            possibleStates.push(newState);
         }
-        */
 
         return possibleStates;
     }
 
     randomPlay() {
-        // TODO
+        let possibleActions = this.board.getMyPossibleActions();
+        const randomIndex = Math.floor(Math.random() * (possibleActions.length - 1));
+        this.board.doAction(possibleActions[randomIndex]);
     }
 }
 
@@ -222,8 +252,8 @@ class Node {
     }
 
     getRandomChildNode() {
-        const nbOfPossibeMoves = tthis.children.length;
-        const randomIndex = Math.random() * nbOfPossibeMoves;
+        const nbOfPossibeMoves = this.children.length - 1;
+        const randomIndex = Math.floor(Math.random() * nbOfPossibeMoves);
         return this.children[randomIndex];
     }
 
