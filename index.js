@@ -101,6 +101,13 @@ class Game {
             return new Action(WAIT);
         }
 
+        if (largeTrees.length > 3) {
+            let largeTree = this.findTreeOnHighestRichnessCell(largeTrees);
+            if (this.mySun >= 4) {
+                return new Action(COMPLETE, largeTree.cellIndex);
+            }
+        }
+
         const growTreeAction = this.getGrowTreeAction(
             seeds,
             smallTrees,
@@ -194,24 +201,31 @@ class Game {
                 return new Action(GROW, treesInCenter[0].cellIndex);
             }
         } else {
-            if (seeds.length > 0) {
-                let seed = this.findTreeOnHighestRichnessCell(seeds);
-                let growCost = this.getGrowthCost(seed);
-                if (growCost <= this.mySun) {
-                    return new Action(GROW, seed.cellIndex);
-                } else {
-                    return new Action(WAIT);
+            if (mediumTrees.length > 3) {
+                let mediumTree =
+                    this.findTreeOnHighestRichnessCell(mediumTrees);
+                if (this.getGrowthCost(mediumTree) <= this.mySun) {
+                    return new Action(GROW, mediumTree.cellIndex);
                 }
-            } else if (smallTrees.length > 0) {
-                let smallTree = this.findTreeOnHighestRichnessCell(smallTrees);
-                let growCost = this.getGrowthCost(smallTree);
-                if (growCost <= this.mySun) {
-                    return new Action(GROW, smallTree.cellIndex);
-                } else {
+                return new Action(WAIT);
+            } else {
+                if (seeds.length > 0) {
+                    let seed = this.findTreeOnHighestRichnessCell(seeds);
+                    let growCost = this.getGrowthCost(seed);
+                    if (growCost <= this.mySun) {
+                        return new Action(GROW, seed.cellIndex);
+                    }
+                    return new Action(WAIT);
+                } else if (smallTrees.length > 0) {
+                    let smallTree =
+                        this.findTreeOnHighestRichnessCell(smallTrees);
+                    let growCost = this.getGrowthCost(smallTree);
+                    if (growCost <= this.mySun) {
+                        return new Action(GROW, smallTree.cellIndex);
+                    }
                     return new Action(WAIT);
                 }
             }
-            // do not grow medium trees to large at this state because we want to keep trees to expand
         }
         return null;
     }
